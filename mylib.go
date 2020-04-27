@@ -5,11 +5,42 @@ package mylib
 import (
 	"fmt"
 	"container/list"
+	"errors"
 )
+
+// ====================================================================
+// struct defination
+// ====================================================================
+
+//包体外可以直接访问
+type Rectangle struct {
+	Length int32         //包体外结构体可以访问
+	Width int32          //包体外结构体可以访问
+	private int32        //包体外结构体不可以访问
+}
+
+//包体外不能访问,只能通过工厂方法NewSquare初始化返回
+type square struct {
+	width int32
+}
+
 
 // ====================================================================
 // API functions
 // ====================================================================
+
+func NewSquare(width int32) *square{
+	s := new(square)
+	s.width=width
+	return s
+}
+
+func GetSqureWidth(s *square) (int32,error) {
+	if s==nil {
+		return 0,errors.New("nil pointer")
+	}
+	return (*s).width,nil
+}
 
 func EmptyFunc(){
 
