@@ -6,8 +6,8 @@ import (
 	"os"
 
 	//"fmt"
+	"path"
 	"runtime"
-	"path"	
 	"strconv"
 )
 
@@ -27,7 +27,7 @@ const (
 	LL_DEBUG              //debug级别
 )
 
-const DEFAULT_LL int = LL_DEBUG   //默认日志级别DEBUG
+const DEFAULT_LL int = LL_DEBUG //默认日志级别DEBUG
 
 const STR_ERROR string = "Error"
 const STR_WARNING string = "Warning"
@@ -35,7 +35,6 @@ const STR_DEBUG string = "Debug"
 
 var LogLevel *int = nil
 var errFile *os.File = nil
-
 
 func GetLogLevel() int {
 	if LogLevel == nil {
@@ -67,45 +66,44 @@ func SetLogLevel(Level int) {
 }
 
 //error级别写日志
-func ERROR(format1 string, args ...interface{}) {
-	format := CallInfo()+" "+format1
+func ERROR(format string, args ...interface{}) {
 	if *LogLevel >= LL_ERROR {
-		Error.Printf(format, args...)
+		Error.Printf(CallInfo()+" "+format, args...)
 	}
 }
 
-//debug级别写日志
+//Warning级别写日志
 func WARNING(format string, args ...interface{}) {
 	if *LogLevel >= LL_WARNING {
-		Warning.Printf(format, args...)
+		Warning.Printf(CallInfo()+" "+format, args...)
 	}
 }
 
 //debug级别写日志
 func DEBUG(format string, args ...interface{}) {
-	if *LogLevel >= LL_DEBUG {
-		Debug.Printf(format, args...)
+	if *LogLevel >= LL_DEBUG {		
+		Debug.Printf(CallInfo()+" "+format, args...)
 	}
 }
 
 //调用文件与行号,eg main.go:18
 func CallInfo() string {
 	_, var2, var3, _ := runtime.Caller(2)
-	nameWithSuffix:=path.Base(var2)
-	return nameWithSuffix+":"+strconv.Itoa(var3)
+	nameWithSuffix := path.Base(var2)
+	return nameWithSuffix + ":" + strconv.Itoa(var3)
 }
 
 //根据日志级别获取日志描述串
 func LogLevelString(LogLevel int) string {
 	switch LogLevel {
-		case LL_ERROR:
-			return STR_ERROR
-		case LL_WARNING:
-			return STR_WARNING
-		case LL_DEBUG:
-			return STR_DEBUG
-		default:
-			return "unkown log_level"
+	case LL_ERROR:
+		return STR_ERROR
+	case LL_WARNING:
+		return STR_WARNING
+	case LL_DEBUG:
+		return STR_DEBUG
+	default:
+		return "unkown log_level"
 	}
 }
 
