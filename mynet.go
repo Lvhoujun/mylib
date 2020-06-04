@@ -1,6 +1,7 @@
 package mylib
 
 import (
+	"syscall"
 	//"fmt"
 	"net"
 	"strconv"
@@ -21,7 +22,7 @@ func NetTest() {
 
 func StartTcpServer(port uint16) {
 	Listener, err := net.Listen("tcp", ":"+strconv.Itoa(int(port)))
-	DEBUG("开始监听")
+	DEBUG("开始监听[%d]", port)
 	if err != nil {
 		ERROR("网络服务启动失败,err:%v", err)
 		panic(err)
@@ -40,13 +41,30 @@ func StartTcpServer(port uint16) {
 
 // @doc 连接成功建立处理
 func HandleConn(conn net.Conn) {
+	defer conn.Close()
+	Client := conn.RemoteAddr().String()
 	for {
 		buf := make([]byte, 512)
 		len, err := conn.Read(buf)
+		switch err {
+		case nil:
+			handleMsg(Client, buf)
+		case syscall.EAGAIN:
+			continue
+		default:
+			ERROR("数据接收失败,err:%v", err)
+			return
+		}
+
+		len, err = conn.Write(buf)
 		if err != nil {
 			ERROR("数据接收失败,err:%v", err)
 			return
 		}
-		DEBUG("received data:%v", string(buf[:len]))
+		DEBUG("send data:%v", string(buf[:len]))
 	}
+}
+
+func handleMsg(Client string, buf []byte) {
+	DEBUG("[%s]:<%s>", Client, buf)
 }
