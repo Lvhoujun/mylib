@@ -5,10 +5,11 @@ import (
 	"log"
 	"os"
 
-	//"fmt"
-	"path"
-	"runtime"
-	"strconv"
+	"fmt"
+	"io"
+	// "path"
+	// "runtime"
+	// "strconv"
 )
 
 // ====================================================================
@@ -35,6 +36,8 @@ const STR_DEBUG string = "Debug"
 
 var LogLevel *int = nil
 var errFile *os.File = nil
+var MultWrite bool = true //是否开启多端显示
+var Depth = 2             //堆栈深度
 
 func GetLogLevel() int {
 	if LogLevel == nil {
@@ -54,43 +57,47 @@ func SetLogLevel(Level int) {
 	LogLevel = new(int)
 	*LogLevel = Level
 	if Debug == nil {
-		Debug = log.New(errFile, "[D]", log.Ldate|log.Lmicroseconds)
+		if MultWrite {
+			Debug = log.New(io.MultiWriter(os.Stderr, errFile), "[D]", log.Ldate|log.Lmicroseconds|log.Lshortfile) //多端显示
+		} else {
+			Debug = log.New(io.MultiWriter(errFile), "[D]", log.Ldate|log.Lmicroseconds|log.Lshortfile) //多端显示
+		}
 	}
 	if Warning == nil {
-		Warning = log.New(errFile, "[W]", log.Ldate|log.Lmicroseconds)
+		if MultWrite {
+			Warning = log.New(io.MultiWriter(os.Stderr, errFile), "[W]", log.Ldate|log.Lmicroseconds|log.Lshortfile) //多端显示
+		} else {
+			Warning = log.New(errFile, "[W]", log.Ldate|log.Lmicroseconds) //只写文件
+		}
 	}
 	if Error == nil {
-		//Error = log.New(io.MultiWriter(os.Stderr, errFile), "[E]", log.Ldate|log.Lmicroseconds|log.Lshortfile)  //多端显示
-		Error = log.New(errFile, "[E]", log.Ldate|log.Lmicroseconds) //多端显示
+		if MultWrite {
+			Error = log.New(io.MultiWriter(os.Stderr, errFile), "[E]", log.Ldate|log.Lmicroseconds|log.Lshortfile) //多端显示
+		} else {
+			Error = log.New(errFile, "[E]", log.Ldate|log.Lmicroseconds) //只写文件
+		}
 	}
 }
 
 //error级别写日志
 func ERROR(format string, args ...interface{}) {
 	if *LogLevel >= LL_ERROR {
-		Error.Printf(CallInfo()+" "+format, args...)
+		Error.Output(Depth, fmt.Sprintf(format, args...))
 	}
 }
 
 //Warning级别写日志
 func WARNING(format string, args ...interface{}) {
 	if *LogLevel >= LL_WARNING {
-		Warning.Printf(CallInfo()+" "+format, args...)
+		Warning.Output(Depth, fmt.Sprintf(format, args...))
 	}
 }
 
 //debug级别写日志
 func DEBUG(format string, args ...interface{}) {
-	if *LogLevel >= LL_DEBUG {		
-		Debug.Printf(CallInfo()+" "+format, args...)
+	if *LogLevel >= LL_DEBUG {
+		Debug.Output(Depth, fmt.Sprintf(format, args...))
 	}
-}
-
-//调用文件与行号,eg main.go:18
-func CallInfo() string {
-	_, var2, var3, _ := runtime.Caller(2)
-	nameWithSuffix := path.Base(var2)
-	return nameWithSuffix + ":" + strconv.Itoa(var3)
 }
 
 //根据日志级别获取日志描述串

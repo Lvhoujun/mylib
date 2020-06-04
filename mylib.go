@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"container/list"
 	"errors"
+	"runtime"
 )
 
 // ====================================================================
@@ -70,4 +71,10 @@ func rprint_list(l *list.List) {
 		fmt.Print(e.Value, "  ")
 	}
 	fmt.Println()
+}
+
+func ShowMemory(){
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	ERROR("%d Kb\n", m.Alloc / 1024)
 }
