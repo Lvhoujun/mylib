@@ -39,8 +39,7 @@ func RunWithProtect(entry func()) {
 			stack := string(debug.Stack())
 			ERROR("runtime error,panic:%v,stack:%s", err, stack)
 			write_std_error(err,stack)
-		default: // 非运行时错误
-			fmt.Println("error:", err)
+		default: // 非运行时错误			
 			if err != nil {
 				stack := string(debug.Stack())
 				ERROR("runtime error,panic:%v,stack:%s", err, stack)
