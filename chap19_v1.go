@@ -22,10 +22,13 @@ import (
 // Struct functions
 // ====================================================================
 
+const SAVE_QUEUE = 512  //回写队列文档
+
 type URLStore struct {
 	urls map[string]string //短url=>长url
 	mu   sync.RWMutex      //读写锁
 	file *os.File
+	save chan record	   //dump通道
 }
 
 type record struct {
@@ -59,6 +62,9 @@ func NewURLStore(filename string) *URLStore {
 		}
 		s.doSet(rec.Key,rec.URL)
 	}
+
+	s.save = make(chan record, 512)
+	go s.saveLoop()
 	return  s
 }
 
@@ -86,23 +92,27 @@ func (s *URLStore) doSet(key,url string) (string,bool){
 	return key, true
 }
 
-// 写文件
-func (s *URLStore) save(key,url string) bool{
-	rec := record{key,url}
-	b,err := json.Marshal(rec)
-	if err != nil {
-		ERROR("json Marshal error:%v,rec:%v",err,rec)
-		return false
+func (s *URLStore) reqSave(rec record){
+	s.save <- rec
+}
+
+// 写文件协程
+func (s *URLStore) saveLoop() {	
+	for{
+		rec := <-s.save
+		b,err := json.Marshal(rec)
+		if err != nil {
+			ERROR("json Marshal error:%v,rec:%v",err,rec)
+		}
+		byteL := make([][]byte, 2)
+		byteL[0] = b
+		byteL[1] = []byte("\n")
+		b = bytes.Join(byteL, []byte(""))
+		_,err = s.file.Write(b)
+		if err != nil {
+			ERROR("write file error:%v,rec:%v",err,rec)
+		}
 	}
-	byteL := make([][]byte, 2)
-	byteL[0] = b
-	byteL[1] = []byte("\n")
-	b = bytes.Join(byteL, []byte(""))
-	_,err = s.file.Write(b)
-	if err != nil {
-		ERROR("write file error:%v,rec:%v",err,rec)
-	}
-	return true
 }
 
 // @doc BKDR hash算法
@@ -169,7 +179,8 @@ func Add(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(w, url+" already exists")
 		return
 	}
-	store.save(key,url)
+	rec := record{key,url}
+	store.reqSave(rec)
 	fmt.Fprint(w, key)
 }
 
