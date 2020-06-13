@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"bufio"
 	"encoding/json"
@@ -63,7 +64,7 @@ func NewURLStore(filename string) *URLStore {
 		s.doSet(rec.Key,rec.URL)
 	}
 
-	s.save = make(chan record, 512)
+	s.save = make(chan record, SAVE_QUEUE)
 	go s.saveLoop()
 	return  s
 }
@@ -146,7 +147,7 @@ const  FileName = "./url.json"
 var store = NewURLStore(FileName)
 
 func Chap19V1Entry() {
-	http.HandleFunc("/", View)
+	http.HandleFunc("/", Redirect)
 	http.HandleFunc("/add", Add)
 	http.HandleFunc("/view", View)
 	addr := ":8080"
@@ -192,4 +193,24 @@ func View(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Fprint(w, s)
+}
+
+// @doc 重定向
+func Redirect(w http.ResponseWriter, req *http.Request){
+	key := req.URL.Path[1:]
+	url := store.Get(key)
+	if url == ""{
+		http.NotFound(w,req)
+		return
+	}
+	EnsureUrl(&url)
+	http.Redirect(w,req,url,http.StatusFound)
+}
+
+func EnsureUrl(url *string) {
+	prefix1 := "http://"
+	prefix2 := "https://"
+	if strings.HasPrefix(*url,prefix1)==false && strings.HasPrefix(*url,prefix2)==false{
+		*url = prefix1 + *url
+	}
 }
