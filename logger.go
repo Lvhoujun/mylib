@@ -34,10 +34,15 @@ const STR_ERROR string = "Error"
 const STR_WARNING string = "Warning"
 const STR_DEBUG string = "Debug"
 
-var LogLevel *int = nil
-var errFile *os.File = nil
-var MultWrite bool = true //是否开启多端显示
-var Depth = 2             //堆栈深度
+
+
+var (
+	LogLevel *int = nil
+	errFile *os.File = nil
+	MultWrite bool = true //是否开启多端显示
+	Depth = 2             //堆栈深度	
+)
+
 
 func GetLogLevel() int {
 	if LogLevel == nil {
@@ -45,6 +50,8 @@ func GetLogLevel() int {
 	}
 	return *LogLevel
 }
+
+
 
 func SetLogLevel(Level int) {
 	var err error

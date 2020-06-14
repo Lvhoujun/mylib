@@ -12,14 +12,27 @@ import _ "github.com/go-sql-driver/mysql"
 
 var db = &sql.DB{}
 
+const DATASOURCE = "root:123456@tcp(10.0.10.176:3306)/test?charset=utf8mb4"
+
+func MySqlEntry() {
+	Connect("mysql", DATASOURCE)
+
+}
+
 // @doc 连接数据库
 // @param dataSourceName::root:123456@tcp(127.0.0.1:3306)/test?charset=utf8mb4
 func Connect(driverName string, dataSourceName string) {
 	var err error
 	db, err = sql.Open(driverName, dataSourceName)
-	//fmt.Printf("err111=%v\n", err)
+	DEBUG("err111=%v\n", err)
 	if err != nil {
-		fmt.Printf("error connecting: %s\n", err.Error())
+		ERROR("error connecting: %s\n", err.Error())
+		panic(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		ERROR("error connecting: %s\n", err.Error())
+		return
 	}
 	db.SetMaxOpenConns(100)
 	ClearTable("USER")
@@ -29,7 +42,10 @@ func Connect(driverName string, dataSourceName string) {
 }
 
 func ClearTable(table string) {
-	db.Exec("truncate table " + table)
+	_, err := db.Exec("truncate table " + table)
+	if err != nil {
+		ERROR("sql exec failed,err=%v", err)
+	}
 }
 
 func query_test() {
@@ -44,7 +60,7 @@ func query_test() {
 		if err := rows.Scan(&id, &name); err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Printf("name:%s ,id:is %d\n", name, id)
+		//DEBUG("name:%s ,id:is %d\n", name, id)
 	}
 	end := time.Now()
 	fmt.Println("方式1 query total time:", end.Sub(start).Seconds())
@@ -61,7 +77,7 @@ func query_test() {
 		if err := rows.Scan(&id, &name); err != nil {
 			log.Fatal(err)
 		}
-		// fmt.Printf("name:%s ,id:is %d\n", name, id)
+		// DEBUG("name:%s ,id:is %d\n", name, id)
 	}
 	end = time.Now()
 	fmt.Println("方式2 query total time:", end.Sub(start).Seconds())
@@ -78,7 +94,7 @@ func query_test() {
 		if err := rows.Scan(&id, &name); err != nil {
 			log.Fatal(err)
 		}
-		//fmt.Printf("name:%s ,id:is %d\n", name, id)
+		//DEBUG("name:%s ,id:is %d\n", name, id)
 	}
 	end = time.Now()
 	fmt.Println("方式3 query total time:", end.Sub(start).Seconds())
